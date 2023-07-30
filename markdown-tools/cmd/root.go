@@ -29,9 +29,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "markdown_links_as_references",
-	Short: "Replace all inline links in a Markdown file",
-	Long:  `Replace all inline links in a Markdown file. It can change either one file or many files passed as a directory`,
+	Use:   "markdown-tools",
+	Short: "A set of tools for working with Markdown files",
+	Long:  `A set of tools for working with Markdown files`,
 }
 
 func Execute() {

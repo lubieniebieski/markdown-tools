@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	converter "github.com/lubieniebieski/scripts/markdown_links_as_references/pkg"
+	converter "github.com/lubieniebieski/scripts/markdown-tools/pkg"
 
 	"github.com/spf13/cobra"
 )
 
-var runCmd = &cobra.Command{
-	Use:   "run",
+var linksAsReferencesCmd = &cobra.Command{
+	Use:   "links_as_references",
 	Short: "Replace all inline links in a Markdown file",
 	Long:  `It can change either one file or many`,
 	Args:  cobra.MinimumNArgs(1),
@@ -17,5 +17,5 @@ var runCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(linksAsReferencesCmd)
 }
