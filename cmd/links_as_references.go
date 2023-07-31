@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	converter "github.com/lubieniebieski/scripts/markdown-tools/pkg"
+	converter "github.com/lubieniebieski/markdown-tools/pkg"
 
 	"github.com/spf13/cobra"
 )

@@ -11,6 +11,7 @@
       "mode": "debug",
       "program": "${workspaceFolder}/main.go",
       "args": [
+        "links_as_references",
         "test.md"
       ]
     }

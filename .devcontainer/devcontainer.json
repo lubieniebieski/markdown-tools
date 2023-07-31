@@ -1,5 +1,5 @@
 {
-  "name": "markdown_links_as_references",
+  "name": "markdown-tools",
   "dockerFile": "Dockerfile",
   "appPort": [
     "8000:8000"

@@ -27,11 +27,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = "0.1-alpha"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "markdown-tools",
-	Short: "A set of tools for working with Markdown files",
-	Long:  `A set of tools for working with Markdown files`,
+	Use:     "markdown-tools",
+	Version: version,
+	Short:   "A set of tools for working with Markdown files",
+	Long:    `A set of tools for working with Markdown files`,
 }
 
 func Execute() {

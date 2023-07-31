@@ -1,4 +1,4 @@
-module github.com/lubieniebieski/scripts/markdown-tools
+module github.com/lubieniebieski/markdown-tools
 
 go 1.20
 

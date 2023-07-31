@@ -22,7 +22,7 @@ THE SOFTWARE.
 package main
 
 import (
-	"github.com/lubieniebieski/scripts/markdown-tools/cmd"
+	"github.com/lubieniebieski/markdown-tools/cmd"
 )
 
 func main() {
