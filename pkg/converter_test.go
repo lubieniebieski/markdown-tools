@@ -186,7 +186,7 @@ func TestRun(t *testing.T) {
 	}
 	defer os.Remove(filename)
 
-	Run(filename)
+	Run(filename, false)
 
 	newContent, err := os.ReadFile(filename)
 	if err != nil {

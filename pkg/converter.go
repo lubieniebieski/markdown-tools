@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -161,17 +162,63 @@ func RunOnContent(content []byte) (modifiedContent []byte) {
 
 }
 
-func Run(filename string) {
-	content, _ := os.ReadFile(filename)
-	newContent := RunOnContent(content)
+func Run(path string, backup bool) {
+	filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
 
-	err := os.WriteFile(filename, newContent, 0644)
+		fmt.Println(path)
+		if err != nil {
+			fmt.Printf("Error accessing file %s: %v\n", path, err)
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) != ".md" {
+			return nil
+		}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			fmt.Printf("Error reading file %s: %v\n", path, err)
+			return err
+		}
+		if backup {
+			err := backupFile(path)
+			if err != nil {
+				fmt.Printf("Error creating backup file: %v\n", err)
+				return err
+			}
+		}
+		newContent := RunOnContent(content)
 
-	if err != nil {
-		fmt.Printf("Error updating file: %v\n", err)
-		return
+		err = os.WriteFile(path, newContent, 0644)
+
+		if err != nil {
+			fmt.Printf("Error updating file %s: %v\n", path, err)
+			return err
+		}
+
+		fmt.Printf("File %s updated successfully!\n", path)
+		return nil
+	})
+}
+
+func backupFile(filename string) error {
+	backupFilename := filename + ".bak"
+	_, err := os.Stat(backupFilename)
+	if err == nil {
+		return fmt.Errorf("backup file already exists: %s", backupFilename)
 	}
-
-	fmt.Printf("File %s updated successfully!\n", filename)
-
+	if !os.IsNotExist(err) {
+		return err
+	}
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(backupFilename, data, 0644)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Backup created: %s\n", backupFilename)
+	return nil
 }
