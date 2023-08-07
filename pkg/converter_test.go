@@ -233,6 +233,22 @@ func TestRunOnContent(t *testing.T) {
 		}
 	})
 
+	t.Run("doesn't remove empty lines between paragraphs", func(t *testing.T) {
+		content := []byte(`first line
+
+last line`)
+
+		expectedOutput := []byte(`first line
+
+last line`)
+
+		converter.RunOnContent(content)
+
+		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
+			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
+		}
+	})
+
 	t.Run("references are listed in order", func(t *testing.T) {
 		content := []byte(`first line
 	second line

@@ -121,7 +121,7 @@ func (c *MarkdownConverter) cleanup() {
 	}
 
 	// Remove all empty lines if there is more than one in a row
-	c.modifiedContent = regexp.MustCompile(`\n{2,}`).ReplaceAll(c.modifiedContent, []byte("\n"))
+	c.modifiedContent = regexp.MustCompile(`\\n{2,}`).ReplaceAll(c.modifiedContent, []byte("\n"))
 	// Remove the last line if it's empty
 	c.modifiedContent = bytes.TrimRightFunc(c.modifiedContent, unicode.IsSpace)
 }
