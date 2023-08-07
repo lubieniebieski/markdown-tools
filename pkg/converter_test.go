@@ -3,15 +3,18 @@ package converter
 import (
 	"bytes"
 	"os"
+	"reflect"
 	"testing"
 )
 
 func TestAddLink(t *testing.T) {
 	converter := MarkdownConverter{}
 	converter.addLink("Google", "https://www.google.com", "ref")
+	converter.addLink("Github", "https://www.github.com", "")
 
 	expectedLinks := []Link{
 		{Name: "Google", URL: "https://www.google.com", ID: "ref"},
+		{Name: "Github", URL: "https://www.github.com", ID: "1"},
 	}
 
 	if len(converter.Links) != len(expectedLinks) {
@@ -25,16 +28,63 @@ func TestAddLink(t *testing.T) {
 		if link.URL != expectedLinks[i].URL {
 			t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
 		}
-		if link.ReferenceNo != expectedLinks[i].ReferenceNo {
-			t.Errorf("Expected link reference number '%d', but got '%d'", expectedLinks[i].ReferenceNo, link.ReferenceNo)
-		}
+
 		if link.ID != expectedLinks[i].ID {
 			t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
 		}
 	}
 }
+func TestMarkdownConverter_referencesList(t *testing.T) {
+	converter := MarkdownConverter{}
+	converter.addLink("Link 1", "http://example.com/1", "1")
+	converter.addLink("Link 2", "http://example.com/2", "33")
+	converter.addLink("Link 3", "http://example.com/3", "4")
+	converter.addLink("Link 4", "http://example.com/4", "111")
+	converter.addLink("HTML", "http://example.com/html", "html")
+	converter.addLink("Footnote", "", "^1")
 
+	expected := []string{
+		"[1]: http://example.com/1",
+		"[4]: http://example.com/3",
+		"[33]: http://example.com/2",
+		"[111]: http://example.com/4",
+		"[html]: http://example.com/html",
+		"[^1]: ",
+	}
+
+	result := converter.referencesList()
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
+	}
+}
 func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
+	t.Run("extracts proper reference", func(t *testing.T) {
+		content := []byte(`[Google][2]`)
+
+		expectedLinks := []Link{
+			{Name: "Google", URL: "", ID: "2"},
+		}
+
+		converter := MarkdownConverter{}
+		converter.extractMarkdownLinksFromBuffer(content)
+
+		if len(converter.Links) != len(expectedLinks) {
+			t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(converter.Links))
+		}
+
+		for i, link := range converter.Links {
+			if link.Name != expectedLinks[i].Name {
+				t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
+			}
+			if link.URL != expectedLinks[i].URL {
+				t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
+			}
+			if link.ID != expectedLinks[i].ID {
+				t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
+			}
+		}
+	})
 	t.Run("works with inline links", func(t *testing.T) {
 		content := []byte(`
 		[Google](https://www.google.com) fdafd
@@ -48,10 +98,10 @@ func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 	`)
 
 		expectedLinks := []Link{
-			{Name: "Google", URL: "https://www.google.com"},
 			{Name: "GitHub", URL: "https://github.com", ID: "1"},
 			{Name: "Wikipedia", URL: "https://www.wikipedia.org", ID: "ref"},
 			{Name: "Example page", URL: "https://example.com", ID: "Example"},
+			{Name: "Google", URL: "https://www.google.com", ID: "2"},
 		}
 
 		converter := MarkdownConverter{}
@@ -82,8 +132,8 @@ func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 		[^1]: some footnote
 	`)
 		expectedLinks := []Link{
-			{Name: "Google", URL: "https://www.google.com"},
 			{Name: "GitHub", URL: "https://github.com", ID: "1"},
+			{Name: "Google", URL: "https://www.google.com", ID: "2"},
 			{Name: "", URL: "some footnote", ID: "^1"},
 		}
 

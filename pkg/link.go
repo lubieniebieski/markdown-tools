@@ -7,10 +7,9 @@ import (
 )
 
 type Link struct {
-	Name        string
-	URL         string
-	ReferenceNo int
-	ID          string
+	Name string
+	URL  string
+	ID   string
 }
 
 func (l *Link) IsFootnote() bool {
@@ -23,13 +22,7 @@ func (l *Link) IsReference() bool {
 }
 
 func (l *Link) AsReference() string {
-	var ref string
-	if l.ID != "" {
-		ref = l.ID
-	} else {
-		ref = fmt.Sprint(l.ReferenceNo)
-	}
-	return fmt.Sprintf("[%s]: %s", ref, l.URL)
+	return fmt.Sprintf("[%s]: %s", l.ID, l.URL)
 }
 
 func (l *Link) AsMarkdownLink() string {

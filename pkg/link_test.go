@@ -22,6 +22,11 @@ func TestIsReference(t *testing.T) {
 	if link.IsReference() {
 		t.Errorf("Expected IsReference() to return false, but got true")
 	}
+
+	link.ID = "1"
+	if link.IsReference() {
+		t.Errorf("Expected IsReference() to return false, but got true")
+	}
 }
 
 func TestAsReference(t *testing.T) {
@@ -31,8 +36,7 @@ func TestAsReference(t *testing.T) {
 		t.Errorf("Expected AsReference() to return %q, but got %q", expected, link.AsReference())
 	}
 
-	link.ID = ""
-	link.ReferenceNo = 1
+	link.ID = "1"
 	expected = "[1]: http://example.com"
 	if link.AsReference() != expected {
 		t.Errorf("Expected AsReference() to return %q, but got %q", expected, link.AsReference())

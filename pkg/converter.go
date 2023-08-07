@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -29,19 +30,20 @@ func (c *MarkdownConverter) extractFootnotesFromBuffer(content []byte) {
 	}
 }
 func (c *MarkdownConverter) extractMarkdownLinksFromBuffer(content []byte) {
-	inlineLinkRegex := regexp.MustCompile(`\[(.*?)\]\((.*?)\)`)
-	matches := inlineLinkRegex.FindAllSubmatch(content, -1)
+	refLinkRegex := regexp.MustCompile(`\[([^\]]*)?\]\[(\w+)\]`)
+	refLinksMatches := refLinkRegex.FindAllSubmatch(content, -1)
 
-	for _, match := range matches {
+	for _, match := range refLinksMatches {
+		c.addLink(string(match[1]), "", string(match[2]))
+	}
+
+	inlineLinkRegex := regexp.MustCompile(`\[(.*?)\]\((.*?)\)`)
+	inlineLinksMatches := inlineLinkRegex.FindAllSubmatch(content, -1)
+
+	for _, match := range inlineLinksMatches {
 		c.addLink(string(match[1]), string(match[2]), "")
 	}
 
-	refLinkRegex := regexp.MustCompile(`\[([^\]]*)?\]\[(\w+)\]`)
-	matches = refLinkRegex.FindAllSubmatch(content, -1)
-
-	for _, match := range matches {
-		c.addLink(string(match[1]), "", string(match[2]))
-	}
 	c.extractReferenceLinksFromBuffer(content)
 	c.extractFootnotesFromBuffer(content)
 }
@@ -78,19 +80,21 @@ func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 			}
 		}
 	}
-
-	link := Link{Name: name, URL: url, ID: ID}
-	if !link.IsFootnote() && !link.IsReference() {
+	if ID == "" {
 		usedNumbers := make(map[int]bool)
 		for _, l := range c.Links {
-			usedNumbers[l.ReferenceNo] = true
+			if num, err := strconv.Atoi(l.ID); err == nil {
+				usedNumbers[num] = true
+			}
 		}
 		nextNumber := 1
 		for usedNumbers[nextNumber] {
 			nextNumber++
 		}
-		link.ReferenceNo = nextNumber
+		ID = strconv.Itoa(nextNumber)
 	}
+
+	link := Link{Name: name, URL: url, ID: ID}
 	c.Links = append(c.Links, link)
 }
 
@@ -110,7 +114,7 @@ func (c *MarkdownConverter) cleanup() {
 		if link.IsFootnote() || link.IsReference() {
 			c.modifiedContent = removeLineContainingString(c.modifiedContent, link.AsReference())
 		} else {
-			linkRef := fmt.Sprintf("[%d]", link.ReferenceNo)
+			linkRef := fmt.Sprintf("[%s]", link.ID)
 			linkRegex := regexp.MustCompile(fmt.Sprintf(`\(%s\)`, link.URL))
 			c.modifiedContent = linkRegex.ReplaceAll(c.modifiedContent, []byte(linkRef))
 		}
@@ -132,13 +136,39 @@ func (c *MarkdownConverter) addNewReferencesList() {
 }
 
 func (c *MarkdownConverter) referencesList() []string {
-	var result []string
+	var numberedRefs []string
+	var otherRefs []string
+	var footnotes []string
+
+	// Sort links by ID
 	sort.Slice(c.Links, func(i, j int) bool {
-		return c.Links[i].AsReference() < c.Links[j].AsReference()
+		num1, err1 := strconv.Atoi(c.Links[i].ID)
+		num2, err2 := strconv.Atoi(c.Links[j].ID)
+		if err1 == nil && err2 == nil {
+			return num1 < num2
+		} else if err1 != nil && err2 != nil {
+			return c.Links[i].ID < c.Links[j].ID
+		} else {
+			return err1 == nil
+		}
 	})
+
+	// Separate links into numbered references, other references, and footnotes
 	for _, link := range c.Links {
-		result = append(result, link.AsReference())
+		if link.IsFootnote() {
+			footnotes = append(footnotes, link.AsReference())
+		} else if link.IsReference() {
+			otherRefs = append(otherRefs, link.AsReference())
+		} else {
+			numberedRefs = append(numberedRefs, link.AsReference())
+		}
 	}
+
+	// Combine the three lists of links into a single list
+	var result []string
+	result = append(result, numberedRefs...)
+	result = append(result, otherRefs...)
+	result = append(result, footnotes...)
 	return result
 }
 
