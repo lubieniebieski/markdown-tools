@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Link represents a link along with its reference number
@@ -105,6 +106,11 @@ func (c *MarkdownConverter) cleanup() {
 			c.modifiedContent = linkRegex.ReplaceAll(c.modifiedContent, []byte(linkRef))
 		}
 	}
+
+	// Remove all empty lines if there is more than one in a row
+	c.modifiedContent = regexp.MustCompile(`\n{2,}`).ReplaceAll(c.modifiedContent, []byte("\n"))
+	// Remove the last line if it's empty
+	c.modifiedContent = bytes.TrimRightFunc(c.modifiedContent, unicode.IsSpace)
 }
 
 func (c *MarkdownConverter) addNewReferencesList() {
@@ -140,6 +146,7 @@ func (c *MarkdownConverter) clearReferences() {
 
 func (c *MarkdownConverter) RunOnContent(content []byte) {
 	c.originalContent = content
+	c.Links = []Link{}
 	c.extractLinksFromReferences()
 	c.clearReferences()
 	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
@@ -164,8 +171,6 @@ func RunOnContent(content []byte) (modifiedContent []byte) {
 
 func Run(path string, backup bool) {
 	filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
-
-		fmt.Println(path)
 		if err != nil {
 			fmt.Printf("Error accessing file %s: %v\n", path, err)
 			return err
@@ -181,14 +186,13 @@ func Run(path string, backup bool) {
 			fmt.Printf("Error reading file %s: %v\n", path, err)
 			return err
 		}
-		if backup {
-			err := backupFile(path)
-			if err != nil {
-				fmt.Printf("Error creating backup file: %v\n", err)
-				return err
-			}
-		}
+
 		newContent := RunOnContent(content)
+
+		if bytes.Equal(content, newContent) {
+			fmt.Printf("File %s: Nothing to update\n", path)
+			return nil
+		}
 
 		err = os.WriteFile(path, newContent, 0644)
 

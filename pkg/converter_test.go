@@ -130,7 +130,10 @@ func TestRemoveLineContainingString(t *testing.T) {
 	}
 }
 func TestRunOnContent(t *testing.T) {
-	content := []byte(`[Google](https://www.google.com) fdafd
+	converter := MarkdownConverter{}
+
+	t.Run("works with inline links", func(t *testing.T) {
+		content := []byte(`[Google](https://www.google.com) fdafd
 [GitHub][1]
 [Wikipedia][ref] fdsf ds
 [Example page][Example]
@@ -139,7 +142,7 @@ func TestRunOnContent(t *testing.T) {
 [ref]: https://www.wikipedia.org
 [Example]: https://example.com`)
 
-	expectedOutput := []byte(`[Google][4] fdafd
+		expectedOutput := []byte(`[Google][4] fdafd
 [GitHub][1]
 [Wikipedia][ref] fdsf ds
 [Example page][Example]
@@ -150,12 +153,29 @@ func TestRunOnContent(t *testing.T) {
 [Example]: https://example.com
 [4]: https://www.google.com`)
 
-	converter := MarkdownConverter{}
-	converter.RunOnContent(content)
+		converter.RunOnContent(content)
 
-	if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-	}
+		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
+			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
+		}
+	})
+	t.Run("doesn't add any new lines if there are some links already defined", func(t *testing.T) {
+		content := []byte(`first line
+	second line
+[1]: https://github.com
+		`)
+
+		expectedOutput := []byte(`first line
+	second line
+
+[1]: https://github.com`)
+
+		converter.RunOnContent(content)
+
+		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
+			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
+		}
+	})
 }
 
 func TestRun(t *testing.T) {
