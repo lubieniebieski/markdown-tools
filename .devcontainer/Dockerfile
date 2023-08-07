@@ -1,4 +1,4 @@
-FROM golang:1.20.6
+FROM golang:1.20.7
 
 # Configure to reduce warnings and limitations as instruction from official VSCode Remote-Containers.
 # See https://code.visualstudio.com/docs/remote/containers-advanced#_reducing-dockerfile-build-warnings.
