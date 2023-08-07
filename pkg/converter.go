@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -79,8 +80,16 @@ func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 	}
 
 	link := Link{Name: name, URL: url, ID: ID}
-	if !link.IsFootnote() {
-		link.ReferenceNo = len(c.Links) + 1
+	if !link.IsFootnote() && !link.IsReference() {
+		usedNumbers := make(map[int]bool)
+		for _, l := range c.Links {
+			usedNumbers[l.ReferenceNo] = true
+		}
+		nextNumber := 1
+		for usedNumbers[nextNumber] {
+			nextNumber++
+		}
+		link.ReferenceNo = nextNumber
 	}
 	c.Links = append(c.Links, link)
 }
@@ -124,6 +133,9 @@ func (c *MarkdownConverter) addNewReferencesList() {
 
 func (c *MarkdownConverter) referencesList() []string {
 	var result []string
+	sort.Slice(c.Links, func(i, j int) bool {
+		return c.Links[i].AsReference() < c.Links[j].AsReference()
+	})
 	for _, link := range c.Links {
 		result = append(result, link.AsReference())
 	}

@@ -11,7 +11,7 @@ func TestAddLink(t *testing.T) {
 	converter.addLink("Google", "https://www.google.com", "ref")
 
 	expectedLinks := []Link{
-		{Name: "Google", URL: "https://www.google.com", ReferenceNo: 1, ID: "ref"},
+		{Name: "Google", URL: "https://www.google.com", ID: "ref"},
 	}
 
 	if len(converter.Links) != len(expectedLinks) {
@@ -136,22 +136,28 @@ func TestRunOnContent(t *testing.T) {
 		content := []byte(`[Google](https://www.google.com) fdafd
 [GitHub][1]
 [Wikipedia][ref] fdsf ds
+[Third link](https://www.example3.com)
+[Fourth link](https://www.example4.com)
 [Example page][Example]
 [Invalid Link]
 [1]: https://github.com
 [ref]: https://www.wikipedia.org
 [Example]: https://example.com`)
 
-		expectedOutput := []byte(`[Google][4] fdafd
+		expectedOutput := []byte(`[Google][2] fdafd
 [GitHub][1]
 [Wikipedia][ref] fdsf ds
+[Third link][3]
+[Fourth link][4]
 [Example page][Example]
 [Invalid Link]
 
 [1]: https://github.com
-[ref]: https://www.wikipedia.org
+[2]: https://www.google.com
+[3]: https://www.example3.com
+[4]: https://www.example4.com
 [Example]: https://example.com
-[4]: https://www.google.com`)
+[ref]: https://www.wikipedia.org`)
 
 		converter.RunOnContent(content)
 
@@ -160,6 +166,24 @@ func TestRunOnContent(t *testing.T) {
 		}
 	})
 	t.Run("doesn't add any new lines if there are some links already defined", func(t *testing.T) {
+		content := []byte(`first line
+	second line
+[1]: https://github.com
+		`)
+
+		expectedOutput := []byte(`first line
+	second line
+
+[1]: https://github.com`)
+
+		converter.RunOnContent(content)
+
+		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
+			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
+		}
+	})
+
+	t.Run("references are listed in order", func(t *testing.T) {
 		content := []byte(`first line
 	second line
 [1]: https://github.com
@@ -185,19 +209,19 @@ func TestRun(t *testing.T) {
 [Example page][Example]
 [Invalid Link]
 [1]: https://github.com
-[ref]: https://www.wikipedia.org
-[Example]: https://example.com`)
+[Example]: https://example.com
+[ref]: https://www.wikipedia.org`)
 
-	expectedOutput := []byte(`[Google][4] fdafd
+	expectedOutput := []byte(`[Google][2] fdafd
 [GitHub][1]
 [Wikipedia][ref] fdsf ds
 [Example page][Example]
 [Invalid Link]
 
 [1]: https://github.com
-[ref]: https://www.wikipedia.org
+[2]: https://www.google.com
 [Example]: https://example.com
-[4]: https://www.google.com`)
+[ref]: https://www.wikipedia.org`)
 
 	filename := "test.md"
 	err := os.WriteFile(filename, content, 0644)
