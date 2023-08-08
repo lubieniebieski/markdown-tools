@@ -142,7 +142,9 @@ func ConvertFilesInPath(path string, backup bool) {
 			fmt.Printf("File %s: Nothing to update\n", path)
 			return nil
 		}
-
+		if backup {
+			backupFile(path)
+		}
 		err = os.WriteFile(path, newContent, 0644)
 
 		if err != nil {
