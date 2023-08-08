@@ -15,49 +15,9 @@ func TestAddLink(t *testing.T) {
 		{Name: "Google", URL: "https://www.google.com", ID: "ref"},
 		{Name: "Github", URL: "https://www.github.com", ID: "1"},
 	}
-
-	if len(converter.Links) != len(expectedLinks) {
-		t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(converter.Links))
-	}
-
-	for i, link := range converter.Links {
-		if link.Name != expectedLinks[i].Name {
-			t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
-		}
-		if link.URL != expectedLinks[i].URL {
-			t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
-		}
-
-		if link.ID != expectedLinks[i].ID {
-			t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
-		}
-	}
+	assertLinksEqual(t, converter.Links, expectedLinks)
 }
 
-// func TestMarkdownConverter_referencesList(t *testing.T) {
-// 	converter := MarkdownConverter{}
-// 	converter.addLink("Link 1", "http://example.com/1", "1")
-// 	converter.addLink("Link 2", "http://example.com/2", "33")
-// 	converter.addLink("Link 3", "http://example.com/3", "4")
-// 	converter.addLink("Link 4", "http://example.com/4", "111")
-// 	converter.addLink("HTML", "http://example.com/html", "html")
-// 	converter.addLink("Footnote", "", "^1")
-
-// 	expected := []string{
-// 		"[1]: http://example.com/1",
-// 		"[4]: http://example.com/3",
-// 		"[33]: http://example.com/2",
-// 		"[111]: http://example.com/4",
-// 		"[html]: http://example.com/html",
-// 		"[^1]: ",
-// 	}
-
-// 	result := converter.referencesList()
-
-//		if !reflect.DeepEqual(result, expected) {
-//			t.Errorf("Expected %v, but got %v", expected, result)
-//		}
-//	}
 func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 	t.Run("extracts proper reference", func(t *testing.T) {
 		content := []byte(`[Google][2]`)
@@ -69,21 +29,8 @@ func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 		converter := MarkdownConverter{}
 		converter.extractMarkdownLinksFromBuffer(content)
 
-		if len(converter.Links) != len(expectedLinks) {
-			t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(converter.Links))
-		}
+		assertLinksEqual(t, converter.Links, expectedLinks)
 
-		for i, link := range converter.Links {
-			if link.Name != expectedLinks[i].Name {
-				t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
-			}
-			if link.URL != expectedLinks[i].URL {
-				t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
-			}
-			if link.ID != expectedLinks[i].ID {
-				t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
-			}
-		}
 	})
 	t.Run("works with inline links", func(t *testing.T) {
 		content := []byte(`
@@ -107,21 +54,8 @@ func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 		converter := MarkdownConverter{}
 		converter.extractMarkdownLinksFromBuffer(content)
 
-		if len(converter.Links) != len(expectedLinks) {
-			t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(converter.Links))
-		}
+		assertLinksEqual(t, converter.Links, expectedLinks)
 
-		for i, link := range converter.Links {
-			if link.Name != expectedLinks[i].Name {
-				t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
-			}
-			if link.URL != expectedLinks[i].URL {
-				t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
-			}
-			if link.ID != expectedLinks[i].ID {
-				t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
-			}
-		}
 	})
 	t.Run("works with footnotes too", func(t *testing.T) {
 		mixedContent := []byte(`
@@ -140,47 +74,12 @@ func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 		converter := MarkdownConverter{}
 		converter.extractMarkdownLinksFromBuffer(mixedContent)
 
-		if len(converter.Links) != len(expectedLinks) {
-			t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(converter.Links))
-		}
+		assertLinksEqual(t, converter.Links, expectedLinks)
 
-		for i, link := range converter.Links {
-			if link.Name != expectedLinks[i].Name {
-				t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
-			}
-			if link.URL != expectedLinks[i].URL {
-				t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
-			}
-			if link.ID != expectedLinks[i].ID {
-				t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
-			}
-		}
 	})
 }
 
-func TestRemoveLineContainingString(t *testing.T) {
-	content := []byte(`
-		This is a test file.
-		It has multiple lines.
-		Some lines contain the word "test".
-		This line should be removed because of test.
-		This line should also be removed because... test.
-		This line should stay.
-	`)
-
-	expectedOutput := []byte(`
-		It has multiple lines.
-		This line should stay.
-	`)
-
-	newContent := removeLineContainingString(content, "test")
-
-	if !bytes.Equal(newContent, expectedOutput) {
-		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, newContent)
-	}
-}
 func TestRunOnContent(t *testing.T) {
-	converter := MarkdownConverter{}
 
 	t.Run("works with inline links", func(t *testing.T) {
 		content := []byte(`[Google](https://www.google.com) fdafd
@@ -210,11 +109,8 @@ func TestRunOnContent(t *testing.T) {
 [ref]: https://www.wikipedia.org
 `)
 
-		converter.RunOnContent(content)
+		compareConvertResults(t, content, expectedOutput)
 
-		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-		}
 	})
 	t.Run("doesn't add any new lines if there are some links already defined", func(t *testing.T) {
 		content := []byte(`first line
@@ -227,12 +123,7 @@ func TestRunOnContent(t *testing.T) {
 
 [1]: https://github.com
 `)
-
-		converter.RunOnContent(content)
-
-		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-		}
+		compareConvertResults(t, content, expectedOutput)
 	})
 
 	t.Run("doesn't remove empty lines between paragraphs", func(t *testing.T) {
@@ -245,12 +136,8 @@ last line
 
 last line
 `)
+		compareConvertResults(t, content, expectedOutput)
 
-		converter.RunOnContent(content)
-
-		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-		}
 	})
 
 	t.Run("references are listed in order", func(t *testing.T) {
@@ -264,12 +151,8 @@ last line
 
 [1]: https://github.com
 `)
+		compareConvertResults(t, content, expectedOutput)
 
-		converter.RunOnContent(content)
-
-		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-		}
 	})
 
 	t.Run("doesn't remove last line in the file", func(t *testing.T) {
@@ -280,12 +163,7 @@ second line
 		expectedOutput := []byte(`first line
 second line
 `)
-
-		converter.RunOnContent(content)
-
-		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
-		}
+		compareConvertResults(t, content, expectedOutput)
 	})
 }
 
@@ -318,7 +196,7 @@ func TestRun(t *testing.T) {
 	}
 	defer os.Remove(filename)
 
-	Run(filename, false)
+	ConvertFilesInPath(filename, false)
 
 	newContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -327,5 +205,33 @@ func TestRun(t *testing.T) {
 
 	if !bytes.Equal(newContent, expectedOutput) {
 		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, newContent)
+	}
+}
+
+func assertLinksEqual(t *testing.T, links []Link, expectedLinks []Link) {
+	if len(links) != len(expectedLinks) {
+		t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(links))
+	}
+
+	for i, link := range links {
+		if link.Name != expectedLinks[i].Name {
+			t.Errorf("Expected link name '%s', but got '%s'", expectedLinks[i].Name, link.Name)
+		}
+		if link.URL != expectedLinks[i].URL {
+			t.Errorf("Expected link URL '%s', but got '%s'", expectedLinks[i].URL, link.URL)
+		}
+
+		if link.ID != expectedLinks[i].ID {
+			t.Errorf("Expected link ID '%s', but got '%s'", expectedLinks[i].ID, link.ID)
+		}
+	}
+}
+
+func compareConvertResults(t *testing.T, input []byte, expectations []byte) {
+	converter := MarkdownConverter{originalContent: input}
+	converter.Run()
+
+	if !bytes.Equal(converter.modifiedContent, expectations) {
+		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectations, converter.modifiedContent)
 	}
 }

@@ -14,7 +14,7 @@ var linksAsReferencesCmd = &cobra.Command{
 	Long:  `It can change either one file or many, you can provide a single file name or entire directory - it will process all files with .md extension`,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		converter.Run(args[0], createBackup)
+		converter.ConvertFilesInPath(args[0], createBackup)
 	},
 }
 

@@ -92,3 +92,24 @@ This is some more text.`)
 		}
 	})
 }
+func TestRemoveLineContainingString(t *testing.T) {
+	content := []byte(`
+		This is a test file.
+		It has multiple lines.
+		Some lines contain the word "test".
+		This line should be removed because of test.
+		This line should also be removed because... test.
+		This line should stay.
+	`)
+
+	expectedOutput := []byte(`
+		It has multiple lines.
+		This line should stay.
+	`)
+
+	newContent := removeLineContainingString(content, "test")
+
+	if !bytes.Equal(newContent, expectedOutput) {
+		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, newContent)
+	}
+}

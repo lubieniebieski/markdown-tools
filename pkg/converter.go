@@ -104,21 +104,6 @@ func (c *MarkdownConverter) extractLinksFromReferences() {
 	}
 }
 
-func (c *MarkdownConverter) RunOnContent(content []byte) {
-	c.originalContent = content
-	c.modifiedContent = c.originalContent
-	c.Links = []Link{}
-	c.extractLinksFromReferences()
-	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
-	c.modifiedContent = cleanup(c.Links, content)
-	c.modifiedContent = append(c.modifiedContent, "\n"...)
-	if len(c.Links) > 0 {
-		c.modifiedContent = append(c.modifiedContent, "\n"...)
-		c.modifiedContent = append(c.modifiedContent, []byte(BuildReferenceLinks(c.Links))...)
-		c.modifiedContent = append(c.modifiedContent, "\n"...)
-	}
-}
-
 func (c *MarkdownConverter) Run() {
 	c.modifiedContent = c.originalContent
 	c.extractLinksFromReferences()
@@ -132,14 +117,7 @@ func (c *MarkdownConverter) Run() {
 	}
 }
 
-func RunOnContent(content []byte) (modifiedContent []byte) {
-	converter := MarkdownConverter{originalContent: content}
-	converter.Run()
-	return converter.modifiedContent
-
-}
-
-func Run(path string, backup bool) {
+func ConvertFilesInPath(path string, backup bool) {
 	filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Error accessing file %s: %v\n", path, err)
@@ -156,8 +134,9 @@ func Run(path string, backup bool) {
 			fmt.Printf("Error reading file %s: %v\n", path, err)
 			return err
 		}
-
-		newContent := RunOnContent(content)
+		mc := MarkdownConverter{originalContent: content}
+		mc.Run()
+		newContent := mc.modifiedContent
 
 		if bytes.Equal(content, newContent) {
 			fmt.Printf("File %s: Nothing to update\n", path)
