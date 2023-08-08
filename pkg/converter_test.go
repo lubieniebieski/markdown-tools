@@ -105,6 +105,7 @@ func TestRunOnContent(t *testing.T) {
 [2]: https://www.google.com
 [3]: https://www.example3.com
 [4]: https://www.example4.com
+
 [Example]: https://example.com
 [ref]: https://www.wikipedia.org
 `)
@@ -185,6 +186,7 @@ func TestRun(t *testing.T) {
 
 [1]: https://github.com
 [2]: https://www.google.com
+
 [Example]: https://example.com
 [ref]: https://www.wikipedia.org
 `)
@@ -196,7 +198,7 @@ func TestRun(t *testing.T) {
 	}
 	defer os.Remove(filename)
 
-	ConvertFilesInPath(filename, false)
+	ConvertFilesInPath(filename, false, false)
 
 	newContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -209,6 +211,7 @@ func TestRun(t *testing.T) {
 }
 
 func assertLinksEqual(t *testing.T, links []Link, expectedLinks []Link) {
+	t.Helper()
 	if len(links) != len(expectedLinks) {
 		t.Errorf("Expected %d links, but got %d", len(expectedLinks), len(links))
 	}
@@ -228,6 +231,7 @@ func assertLinksEqual(t *testing.T, links []Link, expectedLinks []Link) {
 }
 
 func compareConvertResults(t *testing.T, input []byte, expectations []byte) {
+	t.Helper()
 	converter := MarkdownConverter{originalContent: input}
 	converter.Run()
 

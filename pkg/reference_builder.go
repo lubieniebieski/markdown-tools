@@ -41,7 +41,14 @@ func BuildReferenceLinks(links []Link) (output string) {
 	}
 
 	// Combine the three lists of links into a single list
+	if len(numberedRefs) > 0 && len(otherRefs) > 0 {
+		numberedRefs = append(numberedRefs, "")
+	}
 	allConvertedLinks := append(numberedRefs, otherRefs...)
+	if len(allConvertedLinks) > 0 && len(footnotes) > 0 {
+		allConvertedLinks = append(allConvertedLinks, "")
+	}
+
 	allConvertedLinks = append(allConvertedLinks, footnotes...)
 	return strings.Join(allConvertedLinks, "\n")
 }
