@@ -3,6 +3,8 @@ package converter
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -117,7 +119,15 @@ func (c *MarkdownConverter) Run() {
 	}
 }
 
-func ConvertFilesInPath(path string, backup bool) {
+func setupLogger(verbose bool) {
+	log.SetOutput(io.Discard)
+	if verbose {
+		log.SetOutput(os.Stderr)
+	}
+}
+func ConvertFilesInPath(path string, backup, verbose bool) {
+	setupLogger(verbose)
+
 	filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Error accessing file %s: %v\n", path, err)
@@ -139,7 +149,7 @@ func ConvertFilesInPath(path string, backup bool) {
 		newContent := mc.modifiedContent
 
 		if bytes.Equal(content, newContent) {
-			fmt.Printf("File %s: Nothing to update\n", path)
+			log.Printf("%s: Nothing to update\n", path)
 			return nil
 		}
 		if backup {
@@ -151,10 +161,11 @@ func ConvertFilesInPath(path string, backup bool) {
 			fmt.Printf("Error updating file %s: %v\n", path, err)
 			return err
 		}
+		log.Printf("%s updated successfully!\n", path)
 
-		fmt.Printf("File %s updated successfully!\n", path)
 		return nil
 	})
+	fmt.Printf("Completed!\n")
 }
 
 func backupFile(filename string) error {
