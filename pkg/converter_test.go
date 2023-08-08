@@ -3,7 +3,6 @@ package converter
 import (
 	"bytes"
 	"os"
-	"reflect"
 	"testing"
 )
 
@@ -34,30 +33,31 @@ func TestAddLink(t *testing.T) {
 		}
 	}
 }
-func TestMarkdownConverter_referencesList(t *testing.T) {
-	converter := MarkdownConverter{}
-	converter.addLink("Link 1", "http://example.com/1", "1")
-	converter.addLink("Link 2", "http://example.com/2", "33")
-	converter.addLink("Link 3", "http://example.com/3", "4")
-	converter.addLink("Link 4", "http://example.com/4", "111")
-	converter.addLink("HTML", "http://example.com/html", "html")
-	converter.addLink("Footnote", "", "^1")
 
-	expected := []string{
-		"[1]: http://example.com/1",
-		"[4]: http://example.com/3",
-		"[33]: http://example.com/2",
-		"[111]: http://example.com/4",
-		"[html]: http://example.com/html",
-		"[^1]: ",
-	}
+// func TestMarkdownConverter_referencesList(t *testing.T) {
+// 	converter := MarkdownConverter{}
+// 	converter.addLink("Link 1", "http://example.com/1", "1")
+// 	converter.addLink("Link 2", "http://example.com/2", "33")
+// 	converter.addLink("Link 3", "http://example.com/3", "4")
+// 	converter.addLink("Link 4", "http://example.com/4", "111")
+// 	converter.addLink("HTML", "http://example.com/html", "html")
+// 	converter.addLink("Footnote", "", "^1")
 
-	result := converter.referencesList()
+// 	expected := []string{
+// 		"[1]: http://example.com/1",
+// 		"[4]: http://example.com/3",
+// 		"[33]: http://example.com/2",
+// 		"[111]: http://example.com/4",
+// 		"[html]: http://example.com/html",
+// 		"[^1]: ",
+// 	}
 
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Expected %v, but got %v", expected, result)
-	}
-}
+// 	result := converter.referencesList()
+
+//		if !reflect.DeepEqual(result, expected) {
+//			t.Errorf("Expected %v, but got %v", expected, result)
+//		}
+//	}
 func TestExtractMarkdownLinksFromBuffer(t *testing.T) {
 	t.Run("extracts proper reference", func(t *testing.T) {
 		content := []byte(`[Google][2]`)
@@ -207,7 +207,8 @@ func TestRunOnContent(t *testing.T) {
 [3]: https://www.example3.com
 [4]: https://www.example4.com
 [Example]: https://example.com
-[ref]: https://www.wikipedia.org`)
+[ref]: https://www.wikipedia.org
+`)
 
 		converter.RunOnContent(content)
 
@@ -219,12 +220,13 @@ func TestRunOnContent(t *testing.T) {
 		content := []byte(`first line
 	second line
 [1]: https://github.com
-		`)
+`)
 
 		expectedOutput := []byte(`first line
 	second line
 
-[1]: https://github.com`)
+[1]: https://github.com
+`)
 
 		converter.RunOnContent(content)
 
@@ -236,11 +238,13 @@ func TestRunOnContent(t *testing.T) {
 	t.Run("doesn't remove empty lines between paragraphs", func(t *testing.T) {
 		content := []byte(`first line
 
-last line`)
+last line
+`)
 
 		expectedOutput := []byte(`first line
 
-last line`)
+last line
+`)
 
 		converter.RunOnContent(content)
 
@@ -253,12 +257,29 @@ last line`)
 		content := []byte(`first line
 	second line
 [1]: https://github.com
-		`)
+`)
 
 		expectedOutput := []byte(`first line
 	second line
 
-[1]: https://github.com`)
+[1]: https://github.com
+`)
+
+		converter.RunOnContent(content)
+
+		if !bytes.Equal(converter.modifiedContent, expectedOutput) {
+			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, converter.modifiedContent)
+		}
+	})
+
+	t.Run("doesn't remove last line in the file", func(t *testing.T) {
+		content := []byte(`first line
+second line
+`)
+
+		expectedOutput := []byte(`first line
+second line
+`)
 
 		converter.RunOnContent(content)
 
@@ -287,7 +308,8 @@ func TestRun(t *testing.T) {
 [1]: https://github.com
 [2]: https://www.google.com
 [Example]: https://example.com
-[ref]: https://www.wikipedia.org`)
+[ref]: https://www.wikipedia.org
+`)
 
 	filename := "test.md"
 	err := os.WriteFile(filename, content, 0644)

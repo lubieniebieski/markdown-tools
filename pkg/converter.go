@@ -6,10 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
-	"strings"
-	"unicode"
 )
 
 // Link represents a link along with its reference number
@@ -98,80 +95,6 @@ func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 	c.Links = append(c.Links, link)
 }
 
-func removeLineContainingString(buffer []byte, str string) []byte {
-	lines := bytes.Split(buffer, []byte("\n"))
-	var newLines [][]byte
-	for _, line := range lines {
-		if !bytes.Contains(line, []byte(str)) {
-			newLines = append(newLines, line)
-		}
-	}
-	return bytes.Join(newLines, []byte("\n"))
-}
-
-func (c *MarkdownConverter) cleanup() {
-	for _, link := range c.Links {
-		if link.IsFootnote() || link.IsReference() {
-			c.modifiedContent = removeLineContainingString(c.modifiedContent, link.AsReference())
-		} else {
-			linkRef := fmt.Sprintf("[%s]", link.ID)
-			linkRegex := regexp.MustCompile(fmt.Sprintf(`\(%s\)`, link.URL))
-			c.modifiedContent = linkRegex.ReplaceAll(c.modifiedContent, []byte(linkRef))
-		}
-	}
-
-	// Remove all empty lines if there is more than one in a row
-	c.modifiedContent = regexp.MustCompile(`\\n{2,}`).ReplaceAll(c.modifiedContent, []byte("\n"))
-	// Remove the last line if it's empty
-	c.modifiedContent = bytes.TrimRightFunc(c.modifiedContent, unicode.IsSpace)
-}
-
-func (c *MarkdownConverter) addNewReferencesList() {
-
-	if len(c.referencesList()) == 0 {
-		return
-	}
-	c.modifiedContent = append(c.modifiedContent, []byte("\n\n")...)
-	c.modifiedContent = append(c.modifiedContent, []byte(strings.Join(c.referencesList(), "\n"))...)
-}
-
-func (c *MarkdownConverter) referencesList() []string {
-	var numberedRefs []string
-	var otherRefs []string
-	var footnotes []string
-
-	// Sort links by ID
-	sort.Slice(c.Links, func(i, j int) bool {
-		num1, err1 := strconv.Atoi(c.Links[i].ID)
-		num2, err2 := strconv.Atoi(c.Links[j].ID)
-		if err1 == nil && err2 == nil {
-			return num1 < num2
-		} else if err1 != nil && err2 != nil {
-			return c.Links[i].ID < c.Links[j].ID
-		} else {
-			return err1 == nil
-		}
-	})
-
-	// Separate links into numbered references, other references, and footnotes
-	for _, link := range c.Links {
-		if link.IsFootnote() {
-			footnotes = append(footnotes, link.AsReference())
-		} else if link.IsReference() {
-			otherRefs = append(otherRefs, link.AsReference())
-		} else {
-			numberedRefs = append(numberedRefs, link.AsReference())
-		}
-	}
-
-	// Combine the three lists of links into a single list
-	var result []string
-	result = append(result, numberedRefs...)
-	result = append(result, otherRefs...)
-	result = append(result, footnotes...)
-	return result
-}
-
 func (c *MarkdownConverter) extractLinksFromReferences() {
 	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)`)
 	matches := refLinkRegex.FindAllSubmatch(c.originalContent, -1)
@@ -181,27 +104,32 @@ func (c *MarkdownConverter) extractLinksFromReferences() {
 	}
 }
 
-func (c *MarkdownConverter) clearReferences() {
-	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)\n`)
-	c.modifiedContent = refLinkRegex.ReplaceAll(c.originalContent, []byte(""))
-}
-
 func (c *MarkdownConverter) RunOnContent(content []byte) {
 	c.originalContent = content
+	c.modifiedContent = c.originalContent
 	c.Links = []Link{}
 	c.extractLinksFromReferences()
-	c.clearReferences()
 	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
-	c.cleanup()
-	c.addNewReferencesList()
+	c.modifiedContent = cleanup(c.Links, content)
+	c.modifiedContent = append(c.modifiedContent, "\n"...)
+	if len(c.Links) > 0 {
+		c.modifiedContent = append(c.modifiedContent, "\n"...)
+		c.modifiedContent = append(c.modifiedContent, []byte(BuildReferenceLinks(c.Links))...)
+		c.modifiedContent = append(c.modifiedContent, "\n"...)
+	}
 }
 
 func (c *MarkdownConverter) Run() {
+	c.modifiedContent = c.originalContent
 	c.extractLinksFromReferences()
-	c.clearReferences()
 	c.extractMarkdownLinksFromBuffer(c.modifiedContent)
-	c.cleanup()
-	c.addNewReferencesList()
+	c.modifiedContent = cleanup(c.Links, c.modifiedContent)
+	c.modifiedContent = append(c.modifiedContent, "\n"...)
+	if len(c.Links) > 0 {
+		c.modifiedContent = append(c.modifiedContent, "\n"...)
+		c.modifiedContent = append(c.modifiedContent, []byte(BuildReferenceLinks(c.Links))...)
+		c.modifiedContent = append(c.modifiedContent, "\n"...)
+	}
 }
 
 func RunOnContent(content []byte) (modifiedContent []byte) {
