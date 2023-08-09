@@ -1,4 +1,4 @@
-name: goreleaser
+name: Release
 
 on:
   push:
@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  goreleaser:
+  gorelease:
+    name: Release via Gorelease
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
