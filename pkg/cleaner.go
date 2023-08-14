@@ -8,7 +8,7 @@ import (
 )
 
 func cleanup(links []Link, content []byte) []byte {
-	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)(\n|$)`)
+	refLinkRegex := regexp.MustCompile(`[^\]]\[((\w+)|(\^\w+))\]:\s(.+)`)
 	content = refLinkRegex.ReplaceAll(content, []byte(""))
 	for _, link := range links {
 		if link.IsFootnote() || link.IsReference() {

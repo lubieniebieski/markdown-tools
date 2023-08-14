@@ -98,11 +98,11 @@ func (c *MarkdownConverter) addLink(name string, url string, ID string) {
 }
 
 func (c *MarkdownConverter) extractLinksFromReferences() {
-	refLinkRegex := regexp.MustCompile(`\[(.*?)\]:\s(.+)`)
+	refLinkRegex := regexp.MustCompile(`(\n|^)\s*\[(.*?)\]:\s(.+)`)
 	matches := refLinkRegex.FindAllSubmatch(c.originalContent, -1)
 
 	for _, match := range matches {
-		c.addLink(string(""), string(match[2]), string(match[1]))
+		c.addLink(string(""), string(match[3]), string(match[2]))
 	}
 }
 
