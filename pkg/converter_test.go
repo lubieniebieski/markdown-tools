@@ -87,8 +87,9 @@ func TestRunOnContent(t *testing.T) {
 [Wikipedia][ref] fdsf ds
 [Third link](https://www.example3.com)
 [Fourth link](https://www.example4.com)
-[Example page][Example]
 [Invalid Link]
+[Example page][Example]
+
 [1]: https://github.com
 [ref]: https://www.wikipedia.org
 [Example]: https://example.com`)
@@ -98,8 +99,8 @@ func TestRunOnContent(t *testing.T) {
 [Wikipedia][ref] fdsf ds
 [Third link][3]
 [Fourth link][4]
-[Example page][Example]
 [Invalid Link]
+[Example page][Example]
 
 [1]: https://github.com
 [2]: https://www.google.com
@@ -163,6 +164,18 @@ second line
 
 		expectedOutput := []byte(`first line
 second line
+`)
+		compareConvertResults(t, content, expectedOutput)
+	})
+
+	t.Run("doesn't modify content within lists", func(t *testing.T) {
+		content := []byte(`- [Craft][1]: Test
+
+		[1]: www.craft.eu
+`)
+		expectedOutput := []byte(`- [Craft][1]: Test
+
+[1]: www.craft.eu
 `)
 		compareConvertResults(t, content, expectedOutput)
 	})
