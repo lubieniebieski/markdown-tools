@@ -1,6 +1,9 @@
 name: Go
 
-on: [push]
+on:
+  push:
+    tags-ignore:
+      - "**"
 
 jobs:
   test_and_build:
