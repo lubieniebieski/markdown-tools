@@ -13,15 +13,13 @@ func TestCleanup(t *testing.T) {
 			{ID: "3", URL: "https://www.example3.com"},
 		}
 		content := []byte(`This is some text with a reference [link][1].
-[1]: https://www.example1.com`)
+    [1]: https://www.example1.com`)
 
 		expectedOutput := []byte(`This is some text with a reference [link][1].`)
 
 		output := cleanup(links, content)
 
-		if !bytes.Equal(output, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, output)
-		}
+		compareResults(output, expectedOutput, t)
 	})
 
 	t.Run("replaces inline links with reference links", func(t *testing.T) {
@@ -34,9 +32,8 @@ func TestCleanup(t *testing.T) {
 
 		output := cleanup(links, content)
 
-		if !bytes.Equal(output, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, output)
-		}
+		compareResults(output, expectedOutput, t)
+
 	})
 
 	t.Run("removes duplicated empty lines", func(t *testing.T) {
@@ -52,9 +49,8 @@ This is some more text.`)
 
 		output := cleanup(links, content)
 
-		if !bytes.Equal(output, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, output)
-		}
+		compareResults(output, expectedOutput, t)
+
 	})
 
 	t.Run("removes trailing whitespace", func(t *testing.T) {
@@ -69,9 +65,8 @@ This is some more text.`)
 
 		output := cleanup(links, content)
 
-		if !bytes.Equal(output, expectedOutput) {
-			t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, output)
-		}
+		compareResults(output, expectedOutput, t)
+
 	})
 
 	t.Run("removes footnote links", func(t *testing.T) {
@@ -92,6 +87,7 @@ This is some more text.`)
 		}
 	})
 }
+
 func TestRemoveLineContainingString(t *testing.T) {
 	content := []byte(`
 		This is a test file.
@@ -108,8 +104,13 @@ func TestRemoveLineContainingString(t *testing.T) {
 	`)
 
 	newContent := removeLineContainingString(content, "test")
+	compareResults(newContent, expectedOutput, t)
 
-	if !bytes.Equal(newContent, expectedOutput) {
-		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, newContent)
+}
+
+func compareResults(output []byte, expectedOutput []byte, t *testing.T) {
+	t.Helper()
+	if !bytes.Equal(output, expectedOutput) {
+		t.Errorf("Expected output:\n%s\n\nBut got:\n%s", expectedOutput, output)
 	}
 }
